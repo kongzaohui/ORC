@@ -1,0 +1,117 @@
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import com.asprise.ocr.Ocr;
+import com.asprise.ocr.OcrExecutorService;
+
+public class Asprise {
+	
+	static String folderPath="D:\\AntonKONG\\MYPROJECT\\Asprise\\test_object_tesseract_OCR_TEST\\";
+	
+	static String[] fileName={
+		  "English_Number_Garamond",
+		  "English_Number_Estrangelo Edessa",
+		  "English_Number_Times New Roman",
+
+		  "English",
+		  "test",
+		  "Traditional Chinese",
+		  "Traditional Chinese and English_1",
+		  "Traditional Chinese and English_2",
+		  "Simplified Chinese",
+		  "Simplified Chinese and English"
+		  };
+
+static String[] suffix={".tif",".txt",".pdf","rtf"};
+	
+	public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
+	Ocr.setUp(); 									// one time setup
+	Ocr ocr = new Ocr(); 							// create a new OCR engine
+	ocr.startEngine("eng", Ocr.SPEED_FASTEST); 		// English
+	
+	
+	OcrExecutorService oes = new OcrExecutorService("eng", Ocr.SPEED_FASTEST, 4); // 4 threads
+
+	List<Future<String>> futures;
+	try {
+		futures = oes.invokeAll(Arrays.asList(
+				  new OcrExecutorService.OcrCallable(
+				    new File[] {new File("English_Number_Garamond.tif")},
+				      Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PLAINTEXT),
+				      
+				 /* *
+				  * new OcrExecutorService.OcrCallable(
+				    new File[] {new File("English_Number_Garamond.tif")},
+				      Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_RTF, "PROP_RTF_OUTPUT_FILE = English_Number_Estrangelo Edessa.rtf"),
+				  */
+				      
+				 new OcrExecutorService.OcrCallable(
+				    new File[] {new File("English_Number_Garamond.tif")},	 
+				      Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PDF,"PROP_PDF_OUTPUT_FILE = test.pdf|PROP_PDF_OUTPUT_TEXT_VISIBLE = false")    				      
+				));
+		
+		System.out.println("Result of English_Number_Garamond.tif: " + futures.get(0).get());
+		System.out.println("Result of English_Number_Garamond.tif: " + futures.get(1).get());
+		
+		//System.out.println("Result of test.png: " + futures.get(2).get());
+
+		oes.shutdown(); // stops all OCR engines and disposes all threads
+		
+		String result = futures.get(0).get();
+		Writer out = new BufferedWriter(new OutputStreamWriter(
+			    new FileOutputStream( folderPath + fileName[0] + suffix[1]), "UTF-8")); 
+		out.write(result);
+		out.close();
+		
+		System.out.println("Result: The job is done!" + result);
+		
+	} catch (InterruptedException e1) {
+		// TODO Auto-generated catch block
+		e1.printStackTrace();
+	}
+
+	//String result = ocr.recognize(new File[] {new File( folderPath + fileName[3] + suffix[0] )},
+			
+			//Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PLAINTEXT);
+			// PLAINTEXT | XML | PDF | RTF
+			
+			//Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_RTF, "PROP_RTF_OUTPUT_FILE = English.rtf");
+			
+			//Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PDF,"PROP_PDF_OUTPUT_FILE = English.pdf|PROP_PDF_OUTPUT_TEXT_VISIBLE = false");
+			
+	/*Writer out;  
+	
+	try {
+		out = new BufferedWriter(new OutputStreamWriter(
+			    new FileOutputStream( folderPath + fileName[3] + suffix[1]), "UTF-8"));
+		
+	try {
+		out.write(result);
+			} 
+	catch (IOException e) {
+				e.printStackTrace();
+			}
+		 finally {
+		    out.close();
+		}
+	} */
+	
+//	catch (UnsupportedEncodingException e) {
+//		e.printStackTrace();
+//	} 
+//	
+//	catch (FileNotFoundException e) {
+//		e.printStackTrace();
+//	}
+	ocr.stopEngine();
+	}
+}
+
